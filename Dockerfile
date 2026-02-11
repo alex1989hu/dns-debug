@@ -1,7 +1,7 @@
 ARG BASE_IMAGE=almalinux:9.7-20260129
 ARG TARGETARCH
 
-FROM golang:1.25.7 AS golang-builder
+FROM golang:1.26.0 AS golang-builder
 
 RUN go install github.com/domsolutions/gopayloader@master
 RUN go install github.com/rs/dnstrace@latest
