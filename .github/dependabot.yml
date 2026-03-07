@@ -12,3 +12,13 @@ updates:
       prefix: "chore"
     schedule:
       interval: "daily"
+  - package-ecosystem: pip
+    directory: "/"
+    commit-message:
+      prefix: "chore"
+    schedule:
+      interval: daily
+    groups:
+      python-packages:
+        patterns:
+          - "*"

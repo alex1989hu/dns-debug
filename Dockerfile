@@ -61,10 +61,11 @@ COPY --from=golang-builder --chmod=0755 --chown=0:0 /go/bin/dnstrace /usr/local/
 COPY --from=golang-builder --chmod=0755 --chown=0:0 /go/bin/gopayloader /usr/local/bin/gopayloader
 COPY --from=rust-builder --chmod=0755 --chown=0:0 /build/quiche/target/release/quiche-client /usr/local/bin/quiche-client
 
-RUN <<'EOF'
+RUN --mount=type=bind,source=requirements.txt,target=/tmp/requirements.txt <<'EOF'
+set -euxo pipefail
+
 curl https://pgp.mongodb.com/mongosh.asc | gpg --import
 rpm --import https://pgp.mongodb.com/mongosh.asc
-
 
 cat <<'CAT_EOF' > /etc/yum.repos.d/mongodb-org-8.2.repo
 [mongodb-org-8.2]
@@ -82,10 +83,12 @@ if [ "$TARGETARCH" = "amd64" ]; then
 elif [ "$TARGETARCH" = "arm64" ]; then
     dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-aarch64/pgdg-redhat-repo-latest.noarch.rpm
 else
-    echo "Unsupported architecture: $TARGETARCH" && exit 1 ;
+    echo "Unsupported architecture: $TARGETARCH"
+    exit 1
 fi
 
-dnf install -y bash-completion bind-utils chrony lsof mtr nmap nmap-ncat mongodb-mongosh procps-ng postgresql18 traceroute zlib
+dnf install -y bash-completion bind-utils chrony lsof mtr nmap nmap-ncat mongodb-mongosh procps-ng postgresql18 python3.12 python3.12-pip traceroute zlib
+python3.12 -m pip install -r /tmp/requirements.txt
 dnf clean all
 groupadd --gid 10001 dns
 useradd --no-log-init --uid 10001 --gid 10001 dns
