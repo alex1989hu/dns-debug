@@ -33,7 +33,10 @@ jobs:
             latest=false
           tags: |
             type=ref,event=branch
+            type=ref,event=pr
             type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
       - name: Install Cosign
         if: github.event_name != 'pull_request' && github.actor != 'dependabot[bot]'
         uses: sigstore/cosign-installer@v4.0.0
