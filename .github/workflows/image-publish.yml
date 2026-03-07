@@ -49,6 +49,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.0.0
       - name: Login to Registry
@@ -69,6 +71,7 @@ jobs:
           push: true
           labels: ${{ steps.docker_meta.outputs.labels }}
           tags: ghcr.io/${{ github.repository }}:${{ github.sha }}-${{ matrix.arch }}
+          annotations: ${{ steps.docker_meta.outputs.annotations }}
       - name: Build arch image for PR validation
         if: github.event_name == 'pull_request' || github.actor == 'dependabot[bot]'
         uses: docker/build-push-action@v7.0.0
@@ -79,6 +82,7 @@ jobs:
           provenance: false
           push: false
           labels: ${{ steps.docker_meta.outputs.labels }}
+          annotations: ${{ steps.docker_meta.outputs.annotations }}
 
   publish-manifest:
     needs: build
@@ -95,6 +99,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
       - name: Docker meta
         id: docker_meta
         uses: docker/metadata-action@v6.0.0
@@ -108,6 +113,8 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4.0.0
       - name: Login to Registry
@@ -118,14 +125,22 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Create and push manifest list
         run: |
+          annotation_args=()
+          while IFS= read -r annotation; do
+            [ -n "$annotation" ] && annotation_args+=(--annotation "$annotation")
+          done <<< "${ANNOTATIONS}"
+
           for tag in ${TAGS}; do
             docker buildx imagetools create \
+              "${annotation_args[@]}" \
               --tag "${tag}" \
               "ghcr.io/${{ github.repository }}:${{ github.sha }}-amd64" \
               "ghcr.io/${{ github.repository }}:${{ github.sha }}-arm64"
           done
         env:
+          ANNOTATIONS: ${{ steps.docker_meta.outputs.annotations }}
           TAGS: ${{ steps.docker_meta.outputs.tags }}
+
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.0.0
       - name: Sign the container images
