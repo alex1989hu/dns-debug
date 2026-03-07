@@ -76,6 +76,12 @@ enabled=1
 gpgkey=https://www.mongodb.org/static/pgp/server-8.0.asc
 CAT_EOF
 
+cat > /etc/mongosh.conf <<'CFG_EOF'
+mongosh:
+  enableTelemetry: false
+  forceDisableTelemetry: true
+CFG_EOF
+
 dnf update -y
 
 if [ "$TARGETARCH" = "amd64" ]; then
