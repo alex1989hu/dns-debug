@@ -101,5 +101,6 @@ useradd --no-log-init --uid 10001 --gid 10001 dns
 EOF
 
 ENV RUST_LOG=trace
+ENV MONGOSH_DISABLE_TELEMETRY=1
 
 USER 10001
