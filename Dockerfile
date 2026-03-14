@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=almalinux:9.7-20260129
+ARG BASE_IMAGE=docker.io/debian:trixie-20260223
 ARG TARGETARCH
 
 FROM golang:1.26.1 AS golang-builder
@@ -24,8 +24,8 @@ FROM base AS builder
 ARG TARGETARCH
 
 RUN <<'EOF'
-dnf update -y
-dnf install -y gcc git make openssl-devel perl zlib-devel
+apt-get update
+apt-get install -y git zlib1g-dev make gcc
 
 case "${TARGETARCH}" in
     amd64)  ARCH="amd64" ;;
@@ -49,6 +49,8 @@ EOF
 
 FROM base AS production
 
+ARG DEBIAN_FRONTEND=noninteractive
+ARG PIP_NO_CACHE_DIR=1
 ARG TARGETARCH
 
 COPY --from=builder --chmod=0755 --chown=0:0 /build/kubectl /usr/local/bin/kubectl
@@ -64,16 +66,13 @@ COPY --from=rust-builder --chmod=0755 --chown=0:0 /build/quiche/target/release/q
 RUN --mount=type=bind,source=requirements.txt,target=/tmp/requirements.txt <<'EOF'
 set -euxo pipefail
 
-curl https://pgp.mongodb.com/mongosh.asc | gpg --import
-rpm --import https://pgp.mongodb.com/mongosh.asc
+apt-get update
+apt-get install -y --no-install-recommends ca-certificates curl gnupg postgresql-common
 
-cat <<'CAT_EOF' > /etc/yum.repos.d/mongodb-org-8.2.repo
-[mongodb-org-8.2]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/redhat/8/mongodb-org/8.2/$basearch/
-gpgcheck=1
-enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-8.0.asc
+curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-8.0.gpg
+
+cat <<'CAT_EOF' > /etc/apt/sources.list.d/mongodb-org-8.0.list
+deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/8.0 main
 CAT_EOF
 
 cat > /etc/mongosh.conf <<'CFG_EOF'
@@ -82,20 +81,18 @@ mongosh:
   forceDisableTelemetry: true
 CFG_EOF
 
-dnf update -y
+install -d /usr/share/postgresql-common/pgdg
 
-if [ "$TARGETARCH" = "amd64" ]; then
-    dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-elif [ "$TARGETARCH" = "arm64" ]; then
-    dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-aarch64/pgdg-redhat-repo-latest.noarch.rpm
-else
-    echo "Unsupported architecture: $TARGETARCH"
-    exit 1
-fi
+. /etc/os-release
+sh -c "echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main' > /etc/apt/sources.list.d/pgdg.list"
 
-dnf install -y bash-completion bind-utils chrony lsof mtr nmap nmap-ncat mongodb-mongosh procps-ng postgresql18 python3.12 python3.12-pip traceroute zlib
-python3.12 -m pip install -r /tmp/requirements.txt
-dnf clean all
+apt-get install -y --no-install-recommends bash-completion bind9-utils chrony lsof mtr netcat-traditional nmap mongodb-mongosh postgresql-18 python3 python3-pip traceroute
+apt-get clean all
+apt-get purge -y
+rm -rf /var/lib/apt/lists/*
+
+pip install --no-cache-dir -r /tmp/requirements.txt
+pip cache purge
 groupadd --gid 10001 dns
 useradd --no-log-init --uid 10001 --gid 10001 dns
 EOF
