@@ -58,6 +58,7 @@ COPY --from=builder --chmod=0755 --chown=0:0 /build/sslscan/sslscan /usr/local/b
 COPY --from=builder --chmod=0755 --chown=0:0 /build/bombardier /usr/local/bin/bombardier
 COPY --from=docker.io/mikefarah/yq:4.52.2 --chmod=0755 --chown=0:0 /usr/bin/yq /usr/local/bin/yq
 COPY --from=ghcr.io/jqlang/jq:1.8.1 --chmod=0755 --chown=0:0 /jq /usr/local/bin/jq
+COPY --from=ghcr.io/testssl/testssl.sh:3.2 --chmod=0755 --chown=0:0 /usr/local/bin/testssl.sh /usr/local/bin/testssl.sh
 COPY --from=golang-builder --chmod=0755 --chown=0:0 /go/bin/dnstrace /usr/local/bin/dnstrace
 COPY --from=golang-builder --chmod=0755 --chown=0:0 /go/bin/gopayloader /usr/local/bin/gopayloader
 COPY --from=rust-builder --chmod=0755 --chown=0:0 /build/quiche/target/release/quiche-client /usr/local/bin/quiche-client
