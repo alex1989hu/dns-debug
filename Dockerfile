@@ -1,7 +1,7 @@
 ARG BASE_IMAGE=docker.io/debian:trixie-20260223
 ARG TARGETARCH
 
-FROM golang:1.26.1 AS golang-builder
+FROM golang:1.26.2 AS golang-builder
 
 RUN go install github.com/domsolutions/gopayloader@master
 RUN go install github.com/rs/dnstrace@latest
