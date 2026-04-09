@@ -58,7 +58,8 @@ COPY --from=builder --chmod=0755 --chown=0:0 /build/sslscan/sslscan /usr/local/b
 COPY --from=builder --chmod=0755 --chown=0:0 /build/bombardier /usr/local/bin/bombardier
 COPY --from=docker.io/mikefarah/yq:4.52.2 --chmod=0755 --chown=0:0 /usr/bin/yq /usr/local/bin/yq
 COPY --from=ghcr.io/jqlang/jq:1.8.1 --chmod=0755 --chown=0:0 /jq /usr/local/bin/jq
-COPY --from=ghcr.io/testssl/testssl.sh:3.2 --chmod=0755 --chown=0:0 /usr/local/bin/testssl.sh /usr/local/bin/testssl.sh
+COPY --from=ghcr.io/testssl/testssl.sh:3.2 --chmod=0755 --chown=0:0 /home/testssl/testssl.sh /usr/local/bin/testssl.sh
+COPY --from=ghcr.io/testssl/testssl.sh:3.2 --chmod=0755 --chown=0:0 /home/testssl/etc /opt/testssl/etc
 COPY --from=golang-builder --chmod=0755 --chown=0:0 /go/bin/dnstrace /usr/local/bin/dnstrace
 COPY --from=golang-builder --chmod=0755 --chown=0:0 /go/bin/gopayloader /usr/local/bin/gopayloader
 COPY --from=rust-builder --chmod=0755 --chown=0:0 /build/quiche/target/release/quiche-client /usr/local/bin/quiche-client
@@ -87,7 +88,7 @@ install -d /usr/share/postgresql-common/pgdg
 sh -c "echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $VERSION_CODENAME-pgdg main' > /etc/apt/sources.list.d/pgdg.list"
 
 apt-get update
-apt-get install -y --no-install-recommends bash-completion chrony dnsutils lsof mtr netcat-traditional nmap mongodb-mongosh postgresql-18 python3 python3-pip traceroute
+apt-get install -y --no-install-recommends bash-completion bsdmainutils chrony dnsutils lsof mtr netcat-traditional nmap mongodb-mongosh postgresql-18 python3 python3-pip traceroute
 apt-get clean all
 apt-get purge -y
 rm -rf /var/lib/apt/lists/*
@@ -99,5 +100,6 @@ EOF
 
 ENV RUST_LOG=trace
 ENV MONGOSH_DISABLE_TELEMETRY=1
+ENV TESTSSL_INSTALL_DIR=/opt/testssl
 
 USER 10001
