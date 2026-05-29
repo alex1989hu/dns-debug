@@ -6,7 +6,7 @@ FROM golang:1.26.3 AS golang-builder
 RUN go install github.com/domsolutions/gopayloader@master
 RUN go install github.com/rs/dnstrace@latest
 
-FROM rust:1.95.0-trixie AS rust-builder
+FROM rust:1.96.0-trixie AS rust-builder
 
 WORKDIR /build
 
