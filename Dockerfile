@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=docker.io/debian:trixie-20260223
+ARG BASE_IMAGE=docker.io/debian:trixie-20260518
 ARG TARGETARCH
 
 FROM golang:1.26.4 AS golang-builder
